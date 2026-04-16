@@ -12,6 +12,12 @@ dist
 dist-ssr
 *.local
 
+# 敏感信息 - 勿上传到版本控制系统
+src/config/secrets.js
+.env
+.env.local
+.env.*.local
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
