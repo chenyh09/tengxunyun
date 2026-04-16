@@ -70,17 +70,17 @@ export default defineConfig({
       '/lke-api': {
         target: 'https://lke.cloud.tencent.com',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/lke-api/, '')
+        rewrite: (path) => path.replace(/^\/lke-api/, '/')
       },
       '/lke-api-common': {
         target: 'https://lke.tencentcloudapi.com',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/lke-api-common/, '')
+        rewrite: (path) => path.replace(/^\/lke-api-common/, '/')
       },
       '/lke-doc': {
-        target: 'https://ike.cloud.tencent.com',
+        target: 'https://lke.cloud.tencent.com',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/lke-doc/, '')
+        rewrite: (path) => path.replace(/^\/lke-doc/, '/')
       }
     }
   }

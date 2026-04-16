@@ -87,7 +87,7 @@ export const uploadFileToTencent = async (file) => {
 
     // 5. 调用文档解析接口
     const sessionId = uuidv4().replace(/-/g, '')
-    const docParseRes = await axios.post(CREDENTIALS.DOC_PARSE_API, {
+    const docParseRes = await axios.post('/lke-doc/v1/qbot/chat/docParse', {
       session_id: sessionId,
       bot_app_key: CREDENTIALS.APP_KEY,
       request_id: uuidv4(),
