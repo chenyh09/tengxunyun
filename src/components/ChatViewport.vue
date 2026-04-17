@@ -31,7 +31,7 @@
               <div v-if="msg.loading" class="typing-loader">
                 <span></span><span></span><span></span>
               </div>
-              <div v-else class="text-inner" v-html="msg.content"></div>
+              <div v-else class="text-inner" v-html="renderMessageContent(msg.content)"></div>
               <div v-if="msg.fileName" class="file-attachment">
                 <el-icon><Document /></el-icon> {{ msg.fileName }}
               </div>
@@ -46,6 +46,8 @@
 <script setup>
 import { ref, nextTick } from 'vue'
 import { Compass, Search, CircleCheck, Document } from '@element-plus/icons-vue'
+import { marked } from 'marked'
+import DOMPurify from 'dompurify'
 
 defineProps({
   messages: {
@@ -57,6 +59,46 @@ defineProps({
 defineEmits(['quick-command', 'scroll-to-bottom'])
 
 const scrollbarRef = ref(null)
+
+marked.setOptions({
+  gfm: true,
+  breaks: true
+})
+
+const renderMessageContent = (content) => {
+  const raw = typeof content === 'string' ? content : String(content ?? '')
+  const html = marked.parse(raw)
+  return DOMPurify.sanitize(html, {
+    USE_PROFILES: { html: true },
+    ALLOWED_TAGS: [
+      'a',
+      'b',
+      'blockquote',
+      'br',
+      'code',
+      'del',
+      'div',
+      'em',
+      'h1',
+      'h2',
+      'h3',
+      'h4',
+      'h5',
+      'h6',
+      'hr',
+      'i',
+      'img',
+      'li',
+      'ol',
+      'p',
+      'pre',
+      'span',
+      'strong',
+      'ul'
+    ],
+    ALLOWED_ATTR: ['href', 'target', 'rel', 'src', 'alt', 'title']
+  })
+}
 
 const scrollToBottom = () => {
   if (scrollbarRef.value) {
@@ -173,7 +215,43 @@ defineExpose({ scrollToBottom })
 }
 
 .text-inner {
+  white-space: normal;
+  overflow-wrap: anywhere;
   word-break: break-word;
+}
+
+.text-inner :deep(p) {
+  margin: 6px 0;
+}
+
+.text-inner :deep(ol),
+.text-inner :deep(ul) {
+  margin: 8px 0;
+  padding-left: 1.4em;
+}
+
+.text-inner :deep(li) {
+  margin: 4px 0;
+}
+
+.text-inner :deep(ol > li)::marker {
+  font-variant-numeric: tabular-nums;
+}
+
+/* 让 “**作者：** xxx / **年份：** yyyy” 这种 label-value 更整齐 */
+.text-inner :deep(li > strong:first-child) {
+  display: inline-block;
+  min-width: 4.5em;
+}
+
+.text-inner :deep(pre) {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  margin: 8px 0;
+}
+
+.text-inner :deep(a) {
+  text-decoration: underline;
 }
 
 .file-attachment {

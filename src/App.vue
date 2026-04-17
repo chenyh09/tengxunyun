@@ -1,6 +1,6 @@
 ﻿<template>
   <div class="app-wrapper">
-    <Header />
+    <Header @toggleDrawer="toggleDrawer" />
     
     <Sidebar v-model="drawerVisible" />
 
@@ -42,6 +42,10 @@ const currentFile = ref(null)
 const isLoading = ref(false)
 const chatViewportRef = ref(null)
 
+const toggleDrawer = () => {
+  drawerVisible.value = !drawerVisible.value
+}
+
 const messages = reactive([
   { 
     role: 'assistant', 
@@ -56,44 +60,68 @@ const handleFileChange = (file) => {
 }
 
 const sendMessage = async () => {
+  if (isLoading.value) return
   if (!userInput.value.trim() && !currentFile.value) return
-  
+
+  const DEBUG_LKE =
+    import.meta.env.DEV &&
+    (import.meta.env.VITE_DEBUG_LKE === '1' || window.localStorage?.getItem('DEBUG_LKE') === '1')
+  const log = (...args) => {
+    if (!DEBUG_LKE) return
+    // eslint-disable-next-line no-console
+    console.log('[LKE_FLOW]', ...args)
+  }
+
   const text = userInput.value
   const fileName = currentFile.value?.name || null
-  
+
+  log('sendMessage:start', { hasText: Boolean(text?.trim()), fileName })
+
   messages.push({ role: 'user', content: text, fileName: fileName })
   userInput.value = ''
-  
+
   const aiMsg = reactive({ role: 'assistant', content: '', loading: true })
   messages.push(aiMsg)
-  
+
   await nextTick()
   chatViewportRef.value?.scrollToBottom()
   isLoading.value = true
 
   try {
-    let docId = null
-    
+    let fileCtx = null
+
     if (currentFile.value) {
-      aiMsg.content = "正在上传并解析科研文档，请稍候..."
-      docId = await uploadFileToTencent(currentFile.value)
-      if (!docId) {
-        throw new Error("文档解析引擎启动失败，请检查网络或格式")
+      log('sendMessage:upload:start')
+      aiMsg.content = '正在上传并解析科研文档，请稍候...'
+      fileCtx = await uploadFileToTencent(currentFile.value)
+      log('sendMessage:upload:done', fileCtx)
+
+      if (!fileCtx?.docId || !fileCtx?.sessionId) {
+        throw new Error('文档解析引擎启动失败，请检查网络或格式')
       }
       currentFile.value = null
     }
 
-    const aiAnswer = await sendChatMessage(text, docId)
+    log('sendMessage:chat:start', { sessionId: fileCtx?.sessionId, hasFile: Boolean(fileCtx?.docId) })
+    const aiAnswer = await sendChatMessage(text, {
+      sessionId: fileCtx?.sessionId,
+      fileInfo: fileCtx?.fileInfo
+    })
+    log('sendMessage:chat:done', { len: aiAnswer?.length })
+
     aiMsg.content = aiAnswer
     aiMsg.loading = false
-
   } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error('[LKE_FLOW_ERROR]', error)
+
     aiMsg.loading = false
     aiMsg.content = `<span style="color: #ef4444;">业务中断: ${error.message || '参数异常'}</span>`
   } finally {
     isLoading.value = false
     await nextTick()
     chatViewportRef.value?.scrollToBottom()
+    log('sendMessage:finally')
   }
 }
 

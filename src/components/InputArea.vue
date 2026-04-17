@@ -8,10 +8,18 @@
           <el-button size="small" bg text round :icon="DataLine" @click="$emit('quick-command', '从图中提取实验数据：')">图表提取</el-button>
         </div>
         <div class="upload-area">
-          <el-tag v-if="currentFile" closable @close="$emit('clear-file')" size="small" type="success" class="file-tag">
-            {{ currentFile.name }}
+          <el-tag v-if="currentFile" closable @close="handleClearFile" size="small" type="success" class="file-tag">
+            <span class="file-name">{{ currentFile.name }}</span>
           </el-tag>
-          <el-upload action="#" :auto-upload="false" :show-file-list="false" @change="handleFileChange">
+          <el-upload
+            :key="uploadKey"
+            ref="uploadRef"
+            action="#"
+            :auto-upload="false"
+            :show-file-list="false"
+            :disabled="Boolean(currentFile) || isLoading"
+            @change="handleFileChange"
+          >
             <el-button size="small" circle :icon="Paperclip" :type="currentFile ? 'primary' : 'default'" title="上传待审查文档" />
           </el-upload>
         </div>
@@ -43,9 +51,8 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { Search, CircleCheck, DataLine, Promotion, Paperclip } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
 
 const props = defineProps({
   modelValue: String,
@@ -60,10 +67,29 @@ const userInput = computed({
   set: (val) => emit('update:modelValue', val)
 })
 
+const uploadRef = ref(null)
+const uploadKey = ref(0)
+
+const resetUpload = () => {
+  uploadRef.value?.clearFiles?.()
+  uploadKey.value += 1
+}
+
 const handleFileChange = (file) => {
   emit('file-change', file.raw)
-  ElMessage.success(`已载入文件: ${file.name}，点击发送按钮开始审查`)
 }
+
+const handleClearFile = () => {
+  emit('clear-file')
+  resetUpload()
+}
+
+watch(
+  () => props.currentFile,
+  (val) => {
+    if (!val) resetUpload()
+  }
+)
 
 const handleEnter = (e) => {
   if (!e.shiftKey) {
@@ -110,9 +136,16 @@ const handleEnter = (e) => {
 }
 
 .file-tag {
-  max-width: 120px;
+  max-width: 220px;
+}
+
+.file-name {
+  display: inline-block;
+  max-width: 160px;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
 }
 
 .bottom-bar {

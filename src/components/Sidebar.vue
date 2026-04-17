@@ -1,5 +1,5 @@
 <template>
-  <el-drawer v-model="visible" title="科研任务管理" direction="ltr" size="280px" @update:model-value="handleClose">
+  <el-drawer v-model="visible" title="科研任务管理" direction="ltr" size="280px">
     <div class="drawer-content">
       <el-button type="primary" class="new-btn" :icon="Plus" plain>新建科研任务</el-button>
       <div class="section-label">最近检索/审查</div>
@@ -30,10 +30,6 @@ const visible = computed({
   get: () => props.modelValue,
   set: (val) => emit('update:modelValue', val)
 })
-
-const handleClose = () => {
-  emit('update:modelValue', false)
-}
 </script>
 
 <style scoped>
